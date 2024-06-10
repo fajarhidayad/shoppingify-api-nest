@@ -1,0 +1,82 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Status {
+  ACTIVE
+  CANCELLED
+  COMPLETED
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String   @db.VarChar(100)
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items      Item[]
+  categories Category[]
+  lists      List[]
+}
+
+model Category {
+  id        Int      @id @default(autoincrement())
+  name      String   @db.VarChar(50)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId Int
+  user   User   @relation(fields: [userId], references: [id])
+  items  Item[]
+
+  @@unique([name, userId])
+}
+
+model Item {
+  id        Int      @id @default(autoincrement())
+  name      String   @db.VarChar(100)
+  note      String?  @db.VarChar(255)
+  imageUrl  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId          Int
+  user            User             @relation(fields: [userId], references: [id])
+  categoryId      Int
+  category        Category         @relation(fields: [categoryId], references: [id])
+  itemListDetails ItemListDetail[]
+}
+
+model List {
+  id        Int      @id @default(autoincrement())
+  name      String   @db.VarChar(50)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  status    Status   @default(ACTIVE)
+
+  userId          Int
+  user            User             @relation(fields: [userId], references: [id])
+  itemListDetails ItemListDetail[]
+}
+
+model ItemListDetail {
+  id       Int  @id @default(autoincrement())
+  itemId   Int
+  item     Item @relation(fields: [itemId], references: [id])
+  listId   Int
+  list     List @relation(fields: [listId], references: [id])
+  quantity Int
+}
