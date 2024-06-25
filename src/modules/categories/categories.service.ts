@@ -3,9 +3,8 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service';
-import { CreateCategoryDto } from './dto/create-category.dto';
 import { Category } from '@prisma/client';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class CategoriesService {
@@ -13,16 +12,18 @@ export class CategoriesService {
 
   // Create category service
   // Category name should be unique for one user only
-  async create(data: CreateCategoryDto): Promise<Category> {
+  async create(params: { userId: number; name: string }): Promise<Category> {
     // first find category by userId and category name
-    const checkCategory = await this.findUnique(data);
+    const checkCategory = await this.findUnique(params);
 
     // check whether the category is already exist or not
     // if exist then throw an error
     if (checkCategory) throw new BadRequestException('Category already exist');
 
     // create category by userId and category name
-    const category = await this.prisma.category.create({ data });
+    const category = await this.prisma.category.create({
+      data: params,
+    });
 
     return category;
   }

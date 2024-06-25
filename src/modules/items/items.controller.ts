@@ -7,10 +7,16 @@ import {
   ParseIntPipe,
   Post,
   Put,
+  UseGuards,
+  UsePipes,
 } from '@nestjs/common';
+import { ZodValidationPipe } from 'src/utils/zod-validation.pipe';
+import { JwtAuthGuard } from '../auth/guard/jwt-auth.guard';
+import { CreateItemDto, createItemSchema } from './dto/create-item.dto';
+import { UpdateItemDto, updateItemSchema } from './dto/update-item.dto';
 import { ItemsService } from './items.service';
-import { Prisma } from '@prisma/client';
 
+@UseGuards(JwtAuthGuard)
 @Controller('items')
 export class ItemsController {
   constructor(private itemsService: ItemsService) {}
@@ -26,14 +32,16 @@ export class ItemsController {
   }
 
   @Post()
-  create(@Body() itemData: Prisma.ItemCreateInput) {
+  @UsePipes(new ZodValidationPipe(createItemSchema))
+  create(@Body() itemData: CreateItemDto) {
     return this.itemsService.create(itemData);
   }
 
   @Put(':id')
+  @UsePipes(new ZodValidationPipe(updateItemSchema))
   update(
     @Param('id', ParseIntPipe) id: number,
-    @Body() itemData: Prisma.ItemUpdateInput,
+    @Body() itemData: UpdateItemDto,
   ) {
     return this.itemsService.update({ id, data: itemData });
   }

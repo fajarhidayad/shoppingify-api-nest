@@ -5,6 +5,7 @@ import { CategoriesModule } from './modules/categories/categories.module';
 import configuration from './modules/config/configuration';
 import { ItemsModule } from './modules/items/items.module';
 import { UsersModule } from './modules/users/users.module';
+import { ListsModule } from './modules/lists/lists.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { UsersModule } from './modules/users/users.module';
     CategoriesModule,
     AuthModule,
     UsersModule,
+    ListsModule,
   ],
   controllers: [],
   providers: [],

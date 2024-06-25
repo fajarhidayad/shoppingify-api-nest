@@ -1,11 +1,11 @@
 import {
   BadRequestException,
   Injectable,
-  UnauthorizedException,
+  NotFoundException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import * as argon2 from 'argon2';
 import { UsersService } from 'src/modules/users/users.service';
-import argon2 from 'argon2';
 import { SignInDto } from './dto/sign-in.dto';
 import { SignUpDto } from './dto/sign-up.dto';
 
@@ -27,16 +27,29 @@ export class AuthService {
       password: hashed,
     });
 
-    return await this.signPayload({ email: newUser.email, sub: newUser.id });
+    const token = await this.signPayload({ sub: newUser.id });
+
+    return {
+      name: newUser.name,
+      email: newUser.email,
+      access_token: token.access_token,
+    };
   }
 
   async signIn(data: SignInDto) {
     const user = await this.userService.findByEmail(data.email);
-    if (!user) throw new UnauthorizedException('User does not exist');
+    if (!user) throw new NotFoundException('User does not exist');
 
     await this.verifyPassword(data.password, user.password);
 
-    return await this.signPayload({ email: user.email, sub: user.id });
+    const token = await this.signPayload({ sub: user.id });
+
+    return {
+      userId: user.id,
+      name: user.name,
+      email: user.email,
+      access_token: token.access_token,
+    };
   }
 
   private async hashPassword(password: string) {
@@ -46,15 +59,25 @@ export class AuthService {
 
   private async verifyPassword(password: string, hashed: string) {
     const checkPass = await argon2.verify(hashed, password);
-    if (!checkPass) throw new UnauthorizedException('Incorrect password');
+    if (!checkPass) throw new BadRequestException('Incorrect credentials');
     return;
   }
 
-  private async signPayload(payload: { email: string; sub: number | string }) {
+  private async signPayload(payload: { sub: number | string }) {
     const token = await this.jwtService.signAsync(payload);
 
     return {
       access_token: token,
+    };
+  }
+
+  private async refreshToken(payload: { sub: number | string }) {
+    const token = await this.jwtService.signAsync(payload, {
+      expiresIn: '7d',
+    });
+
+    return {
+      refresh_token: token,
     };
   }
 }
