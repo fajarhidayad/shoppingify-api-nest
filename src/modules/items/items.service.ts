@@ -8,8 +8,28 @@ import { UpdateItemDto } from './dto/update-item.dto';
 export class ItemsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAll(userId: number): Promise<Item[]> {
-    const items = await this.prisma.item.findMany({ where: { userId } });
+  async findAll(userId: number) {
+    const items = await this.prisma.category.findMany({
+      where: { userId },
+      include: {
+        items: true,
+      },
+    });
+
+    return items;
+  }
+
+  async findByQuery(userId: number, itemName: string) {
+    const items = await this.prisma.item.findMany({
+      where: { AND: [{ userId }, { name: { contains: itemName } }] },
+      include: {
+        category: {
+          select: {
+            name: true,
+          },
+        },
+      },
+    });
 
     return items;
   }
@@ -22,8 +42,31 @@ export class ItemsService {
     return item;
   }
 
-  async create(data: CreateItemDto): Promise<Item> {
-    const newItem = await this.prisma.item.create({ data });
+  async create(data: CreateItemDto & { userId: number }): Promise<Item> {
+    const category = await this.prisma.category.findFirst({
+      where: { AND: [{ name: data.categoryName }, { userId: data.userId }] },
+    });
+    if (category) {
+      const newItem = await this.prisma.item.create({
+        data: {
+          categoryId: category.id,
+          name: data.name,
+          userId: data.userId,
+          imageUrl: data.imageUrl,
+          note: data.note,
+        },
+      });
+
+      return newItem;
+    }
+
+    const newCategory = await this.prisma.category.create({
+      data: { name: data.categoryName, userId: data.userId },
+    });
+
+    const newItem = await this.prisma.item.create({
+      data: { ...data, categoryId: newCategory.id },
+    });
 
     return newItem;
   }

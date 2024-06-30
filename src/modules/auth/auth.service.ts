@@ -30,6 +30,7 @@ export class AuthService {
     const token = await this.signPayload({ sub: newUser.id });
 
     return {
+      userId: newUser.id,
       name: newUser.name,
       email: newUser.email,
       access_token: token.access_token,
@@ -68,6 +69,18 @@ export class AuthService {
 
     return {
       access_token: token,
+    };
+  }
+
+  async profile(userId: number) {
+    const profile = await this.userService.findById(userId);
+
+    if (!profile) throw new NotFoundException('User not found');
+
+    return {
+      id: profile.id,
+      name: profile.name,
+      email: profile.email,
     };
   }
 

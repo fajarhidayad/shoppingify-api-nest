@@ -5,8 +5,7 @@ export const createItemSchema = z.object({
   name: z.string().trim().max(50),
   note: z.string().max(255).nullish(),
   imageUrl: z.string().nullish(),
-  categoryId: z.number(),
-  userId: z.number(),
+  categoryName: z.string(),
 });
 
 // this can be used for Body() in Controller or in Service for params type

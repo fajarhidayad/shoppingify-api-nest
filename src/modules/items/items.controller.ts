@@ -7,6 +7,7 @@ import {
   ParseIntPipe,
   Post,
   Put,
+  Query,
   UseGuards,
   UsePipes,
 } from '@nestjs/common';
@@ -15,6 +16,7 @@ import { JwtAuthGuard } from '../auth/guard/jwt-auth.guard';
 import { CreateItemDto, createItemSchema } from './dto/create-item.dto';
 import { UpdateItemDto, updateItemSchema } from './dto/update-item.dto';
 import { ItemsService } from './items.service';
+import { User } from 'src/common/decorators/user.decorator';
 
 @UseGuards(JwtAuthGuard)
 @Controller('items')
@@ -22,7 +24,10 @@ export class ItemsController {
   constructor(private itemsService: ItemsService) {}
 
   @Get()
-  findAll(@Body() { userId }: { userId: number }) {
+  findAll(@User('id') userId: number, @Query('item') itemName: string) {
+    if (itemName) {
+      return this.itemsService.findByQuery(userId, itemName);
+    }
     return this.itemsService.findAll(userId);
   }
 
@@ -33,8 +38,8 @@ export class ItemsController {
 
   @Post()
   @UsePipes(new ZodValidationPipe(createItemSchema))
-  create(@Body() itemData: CreateItemDto) {
-    return this.itemsService.create(itemData);
+  create(@Body() itemData: CreateItemDto, @User('id') userId: number) {
+    return this.itemsService.create({ ...itemData, userId });
   }
 
   @Put(':id')
